@@ -12,7 +12,7 @@ log = logging.getLogger('root')
 class FLIR(object):
     def __init__(self, host):
         self.tn = None
-        self.host = host  # should be 192.168.1.10
+        self.host = host
         self.port = 23
         self.timeout = 2
 
@@ -24,12 +24,8 @@ class FLIR(object):
         # when connecting, just read until you reach the prompt
         self.tn.read_until(b'msc]', 1)
 
-        # self.sk = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
-        # self.sk.connect((self.host, self.port))
 
-        # self.getBoxTemp(50, 30, 5, 5)
-        # self.readImage()
-
+    # 如果支持
     def getBoxTemp(self, height, width, rx, ry):
         self.tn.write(b'rset .image.sysimg.measureFuncs.mbox.1.active true\n')
         self.tn.read_until(b'>', 1).decode('ascii')
@@ -42,11 +38,6 @@ class FLIR(object):
         self.tn.write(b'rset .image.sysimg.measureFuncs.mbox.1.y ' + str(ry).encode('ascii') + b'\n')
         self.tn.read_until(b'>', 1).decode('ascii')
 
-
-        self.sk.sendall(b'rls -t .image.sysimg.measureFuncs.mbox.1.maxT \n')  # 把命令发送给对端
-        data = self.sk.recv(4800)
-        print(data)
-
         # self.tn.write(b'rls -t .image.sysimg.measureFuncs.mbox.1.maxT\n')
         # self.tn.write(b'rls - .image.sysimg.measureFuncs.mbox.1.maxT \n')
         # self.tn.read_until(b'>', 1).decode('ascii')
@@ -56,11 +47,6 @@ class FLIR(object):
         # log.info('命令执行结果：%s' % command_result)
         # print(type(command_result))
 
-    def readImage(self):
-        self.tn.write(b'rset .image.state.live.set true\n')  # 强制显示实时图像。
-        self.tn.read_until(b'>', 1).decode('ascii')
-        command_result = self.tn.read_very_eager().decode('ascii')
-        log.info('命令执行结果：%s' % command_result)
 
     # Set camera date and time to the computer time
     def setDateTime(self):
@@ -76,42 +62,11 @@ class FLIR(object):
         timenow = str(datetime.datetime.now().strftime('%H:%M:%S')).encode('ascii')  # store time string
         self.tn.write(timenow + b'\n')
         self.tn.read_until(b'>', 1).decode('ascii')
-        # Check date and time
-        # self.tn.write(b'date /T\n')
-        # self.tn.write(b'time /T\n')
+
 
     # Set file format to file containing temperature data
     def setFormat(self):
         self.tn.write(b'rset .image.services.store.format \"JPEG+PNG\"\n')
-        self.tn.read_until(b'>', 1).decode('ascii')
-
-    # Set relative humidity [0.0-1-0]
-    def setRH(self, rh):  # standard should be rh= 0.5
-        self.tn.write(b'rset .image.sysimg.basicImgData.objectParams.relHum ' + str(rh).encode('ascii') + b'\n')
-        self.tn.read_until(b'>', 1).decode('ascii')
-
-    # Set object distance [m]
-    def setDist(self, distance):
-        self.tn.write(
-            b'rset .image.sysimg.basicImgData.objectParams.objectDistance ' + str(distance).encode('ascii') + b'\n')
-        self.tn.read_until(b'>', 1).decode('ascii')
-
-    # Set ambient T [°C]
-    def setAmbT(self, T):
-        self.tn.write(
-            b'rset .image.sysimg.basicImgData.objectParams.ambTemp ' + str(T + 273.15).encode('ascii') + b'\n')
-        self.tn.read_until(b'>', 1).decode('ascii')
-
-    # Set atm T [°C]
-    def setAtmT(self, T):
-        self.tn.write(
-            b'rset .image.sysimg.basicImgData.objectParams.atmTemp ' + str(T + 273.15).encode('ascii') + b'\n')
-        self.tn.read_until(b'>', 1).decode('ascii')
-
-    # Set object emissivity (0.001-1.0)
-    # Set atm T [°C]
-    def setEmiss(self, E):
-        self.tn.write(b'rset .image.sysimg.basicImgData.objectParams.emissivity ' + str(E).encode('ascii') + b'\n')
         self.tn.read_until(b'>', 1).decode('ascii')
 
     # Set colour palette
@@ -131,7 +86,7 @@ class FLIR(object):
         self.tn.write(b'rset .system.focus.autofull true\n')
         time.sleep(5)
         self.tn.read_until(b'>', 1).decode('ascii')
-        # self.getBoxTemp(20, 30, 30, 20)
+
     # Enable/disable overlay
     def overlay(self, enable):
         if (enable):
