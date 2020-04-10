@@ -1,7 +1,7 @@
 # With help from https://stackoverflow.com/questions/20484984/telnet-read-until-function-doesnt-work
 
 import telnetlib, socket, ftplib, time, datetime
-
+import re
 import logging
 import numpy as np
 np.set_printoptions(threshold=np.inf)
@@ -24,6 +24,7 @@ class FLIR(object):
         # when connecting, just read until you reach the prompt
         self.tn.read_until(b'msc]', 1)
 
+        # self.getImgTemp()
 
     # 如果支持
     def getBoxTemp(self, height, width, rx, ry):
@@ -46,6 +47,24 @@ class FLIR(object):
         # command_result = self.tn.read_very_eager().decode('ascii')
         # log.info('命令执行结果：%s' % command_result)
         # print(type(command_result))
+
+    def getImgTemp(self):
+        # self.tn.write(b'rls .image.sysimg.basicImgData.extraInfo \n')
+        # print(self.tn.read_until(b'>', 1).decode('ascii'))
+
+        self.tn.write(b'rls .image.sysimg.basicImgData.extraInfo.highT \n')
+        strH = self.tn.read_until(b'>', 1).decode('ascii')
+        highT = float(re.findall(r"\d+\.?\d*", strH)[0])-273.15     # 正则表达式取温度数字
+
+        self.tn.write(b'rls .image.sysimg.basicImgData.extraInfo.levelT \n')
+        strA = self.tn.read_until(b'>', 1).decode('ascii')
+        avgT = float(re.findall(r"\d+\.?\d*", strA)[0]) - 273.15
+
+        self.tn.write(b'rls .image.sysimg.basicImgData.extraInfo.lowT \n')
+        strL = self.tn.read_until(b'>', 1).decode('ascii')
+        lowT = float(re.findall(r"\d+\.?\d*", strL)[0])-273.15
+        # print(round(highT, 2), round(lowT, 2))
+        return (round(highT, 2), round(avgT, 2), round(lowT, 2))
 
 
     # Set camera date and time to the computer time

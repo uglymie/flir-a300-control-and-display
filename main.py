@@ -45,6 +45,10 @@ class Main(QDialog, Ui_Dialog):
         self.flir_running = False
         self.logging_running = False
 
+        # set up timer
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.timed_tasks)
+
     def initUI(self):
         # Check for COM ports and add them
         self.connect_B.clicked.connect(self.connectFLIR)  # & flirIP
@@ -54,6 +58,16 @@ class Main(QDialog, Ui_Dialog):
 
         # self.exit_B.clicked.connect(self.close())
 
+    def timed_tasks(self):
+        self.displayTemp()
+
+    def displayTemp(self):
+        temp = self.cam.getImgTemp()
+        self.maxT_label.setText(str(temp[0]))
+        self.minT_label.setText(str(temp[1]))
+        self.avgT_label.setText(str(temp[2]))
+        # print(1)
+        # pass
     # 连接相机显示实时流
     def connectFLIR(self):
         if (self.flir_running == True):
@@ -76,6 +90,7 @@ class Main(QDialog, Ui_Dialog):
                 self.flir_running = True
                 log.info("Camera ready")
                 self.getStream()
+                self.timer.start(120)
 
     def getStream(self):
         # 使用VLC播放库
@@ -88,7 +103,7 @@ class Main(QDialog, Ui_Dialog):
             print("vlcMedia ----- error")
         m_pVLC_Player = vlc.libvlc_media_player_new_from_media(vlcMedia)
         vlc.libvlc_media_release(vlcMedia)
-        vlc.libvlc_media_player_set_hwnd(m_pVLC_Player, self.currentImg.winId().__int__())
+        vlc.libvlc_media_player_set_hwnd(m_pVLC_Player, self.img_lable.winId().__int__())
         ret = vlc.libvlc_media_player_play(m_pVLC_Player)
 
         # 如果opencv可用
@@ -142,6 +157,7 @@ class Main(QDialog, Ui_Dialog):
         log.info("Shutting down application")
         try:
             self.cam.close()
+            self.timer.stop()
         except:
             pass
         log.info("Shutdown completed")
